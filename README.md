@@ -1,5 +1,6 @@
-# Running from source
+[![Build Status](https://travis-ci.org/ansible-swagger-generator/ansible-swagger-generator.svg?branch=master)](https://travis-ci.org/ansible-swagger-generator/ansible-swagger-generator)
 
+# Running from source
 Creating the virtual environment:
 ```
 virtualenv asg
@@ -18,6 +19,7 @@ Exiting the virtualenv:
 deactivate
 ```
 
+# Running Tests
 Install testing libraries
 ```
 pip install mock nose
