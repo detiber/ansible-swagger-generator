@@ -1,4 +1,4 @@
-from swagger.resource import Resource
+from swagger.resource_listing import ResourceListing
 
 MIN_VALID_RESOURCE_LISTING = {
     "swaggerVersion": "1.2",
@@ -16,7 +16,7 @@ VALID_RESOURCE_LISTING = {
 
 class TestResource(object):
     def test_min_valid_resource(self):
-        Resource(MIN_VALID_RESOURCE_LISTING)
+        ResourceListing(MIN_VALID_RESOURCE_LISTING)
 
     def test_valid_resource(self):
-        Resource(VALID_RESOURCE_LISTING)
+        ResourceListing(VALID_RESOURCE_LISTING)
