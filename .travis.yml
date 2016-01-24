@@ -7,7 +7,7 @@ python:
 install:
   - python setup.py install
   - pip install -r test-requirements.txt
-    pip install coveralls
+  - pip install coveralls
 
 script:
   - python setup.py nosetests
