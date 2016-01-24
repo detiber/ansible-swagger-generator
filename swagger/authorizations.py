@@ -1,6 +1,12 @@
+from .base import SwaggerBase
+from .authorization import Authorization
+from .exceptions import SwaggerTypeError
 
-
-class Authorizations(object):
-
+class Authorizations(SwaggerBase):
     def __init__(self, authorizations):
-        pass
+        if not isinstance(authorizations, dict):
+            raise SwaggerTypeError("Mapping type was expected for Authorizations")
+
+        self.authorizations = {}
+        for name, auth in authorizations.iteritems():
+            self.authorizations[name] = Authorization(auth)

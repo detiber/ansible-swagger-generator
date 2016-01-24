@@ -22,9 +22,26 @@ def cli(swagger_spec, verbose):
 
     for s in specs:
         #click.echo(json.dumps(s, indent=2))
-        click.echo("Swagger Version: {0}".format(s['swaggerVersion']))
-        click.echo("Api Version: {0}".format(s['apiVersion']))
-        click.echo("Resource Path: {0}".format(s['resourcePath']))
+        #click.echo("Swagger Version: {0}".format(s['swaggerVersion']))
+        #click.echo("Api Version: {0}".format(s['apiVersion']))
+        #click.echo("Resource Path: {0}".format(s['resourcePath']))
+        for k, v in s.iteritems():
+            if k == 'apis':
+                click.echo("apis:")
+                for api in v:
+                    click.echo("  path: {0}".format(api['path']))
+                    click.echo("  operations:")
+                    for op in api['operations']:
+                        click.echo("    method: {0}".format(op['method']))
+                        click.echo("    nickname: {0}".format(op['nickname']))
+            elif k == 'models':
+                click.echo(k)
+            elif k == 'info':
+                click.echo("info: {0}".format(json.dumps(v, indent=2)))
+            elif k in ['apiVersion', 'swaggerVersion', 'basePath', 'resourcePath']:
+                click.echo("{0}: {1}".format(k, v))
+            else:
+                click.echo("{0}: hidden".format(k))
 #        for api in s['apis']:
 #            click.echo("  Path: {0}".format(api['path']))
 #            click.echo("  Description: {0}".format(api['description']))
