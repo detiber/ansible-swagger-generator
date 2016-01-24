@@ -1,7 +1,7 @@
 import json
 
-from.exceptions import SwaggerError, SwaggerInvalidError, SwaggerFieldError,\
-                       SwaggerTypeError, SwaggerNotImplimented
+from.exceptions import SwaggerInvalidError, SwaggerFieldError, SwaggerTypeError
+
 
 class SwaggerBase(object):
 
@@ -23,7 +23,6 @@ class SwaggerBase(object):
         self.set_fields()
 
     def set_fields(self):
-        required_keys = self.required_fields.keys()
         if set(self.required_fields.keys()).issubset(self.raw.keys()):
             unknown_keys = set(self.raw.keys()).difference(self.known_fields.keys())
             if unknown_keys:
@@ -32,7 +31,7 @@ class SwaggerBase(object):
             for key, val in self.raw.iteritems():
                 expected_type = self.known_fields[key]['type']
                 if issubclass(expected_type, SwaggerBase):
-                    sub=expected_type(val)
+                    sub = expected_type(val)
                     setattr(self, key, sub)
                 elif isinstance(val, expected_type):
                     if isinstance(val, list):
@@ -56,4 +55,3 @@ class SwaggerBase(object):
         else:
             missing_keys = set(self.required_fields.keys()).difference(self.raw.keys())
             raise SwaggerFieldError("Required fields {0} not found".format(", ".join(missing_keys)))
-

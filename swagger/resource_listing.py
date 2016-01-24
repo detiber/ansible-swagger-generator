@@ -3,6 +3,7 @@ from .resource import Resource
 from .info import Info
 from .authorizations import Authorizations
 
+
 class ResourceListing(SwaggerBase):
     def __init__(self, resource_list):
         required_fields = {

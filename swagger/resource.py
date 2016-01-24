@@ -1,5 +1,6 @@
 from .base import SwaggerBase
 
+
 class Resource(SwaggerBase):
     def __init__(self, resource):
         required_fields = {

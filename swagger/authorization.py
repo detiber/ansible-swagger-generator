@@ -2,6 +2,7 @@ from .base import SwaggerBase
 from .oauth_grant_types import OauthGrantTypes
 from .oauth_scope import OauthScope
 
+
 class Authorization(SwaggerBase):
     def __init__(self, auth):
         required_fields = {

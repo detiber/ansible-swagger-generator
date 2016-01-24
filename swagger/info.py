@@ -1,5 +1,6 @@
 from .base import SwaggerBase
 
+
 class Info(SwaggerBase):
     def __init__(self, info):
         required_fields = {

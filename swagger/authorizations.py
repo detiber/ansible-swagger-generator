@@ -2,6 +2,7 @@ from .base import SwaggerBase
 from .authorization import Authorization
 from .exceptions import SwaggerTypeError
 
+
 class Authorizations(SwaggerBase):
     def __init__(self, authorizations):
         if not isinstance(authorizations, dict):

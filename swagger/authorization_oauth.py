@@ -1,6 +1,7 @@
 from .base import SwaggerBase
 from .exceptions import SwaggerFieldError, SwaggerTypeError
 
+
 class OauthTokenEndpoint(SwaggerBase):
     def __init__(self, endpoint):
         required_fields = {
@@ -10,6 +11,7 @@ class OauthTokenEndpoint(SwaggerBase):
             'tokenName': {'type': basestring},
         }
         SwaggerBase.__init__(self, required_fields, optional_fields, endpoint)
+
 
 class OauthTokenRequestEndpoint(SwaggerBase):
     def __init__(self, endpoint):
@@ -22,12 +24,14 @@ class OauthTokenRequestEndpoint(SwaggerBase):
         }
         SwaggerBase.__init__(self, required_fields, optional_fields, endpoint)
 
+
 class OauthLoginEndpoint(SwaggerBase):
     def __init__(self, endpoint):
         required_fields = {
             'url': {'type': basestring},
         }
         SwaggerBase.__init__(self, required_fields, {}, endpoint)
+
 
 class OauthAuthorizationCode(SwaggerBase):
     def __init__(self, auth_code):
@@ -36,6 +40,7 @@ class OauthAuthorizationCode(SwaggerBase):
             'tokenEndpoint': {'type': OauthTokenEndpoint},
         }
         SwaggerBase.__init__(self, required_fields, {}, auth_code)
+
 
 class OauthGrantImplicit(SwaggerBase):
     def __init__(self, grant):
@@ -46,6 +51,7 @@ class OauthGrantImplicit(SwaggerBase):
             'tokenName': {'type': basestring}
         }
         SwaggerBase.__init__(self, required_fields, optional_fields, grant)
+
 
 class OauthGrantTypes(SwaggerBase):
     def __init__(self, grant_types):
@@ -61,6 +67,7 @@ class OauthGrantTypes(SwaggerBase):
         }
         SwaggerBase.__init__(self, {}, optional_fields, grant_types)
 
+
 class OauthScope(SwaggerBase):
     def __init__(self, scope):
         required_fields = {
@@ -70,4 +77,3 @@ class OauthScope(SwaggerBase):
             'description': {'type': basestring},
         }
         SwaggerBase.__init__(self, required_fields, optional_fields, scope)
-
