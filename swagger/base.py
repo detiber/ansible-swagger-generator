@@ -41,13 +41,19 @@ class SwaggerBase(object):
                         else:
                             for item in val:
                                 if not isinstance(item, expected_subtype):
-                                    raise SwaggerTypeError("Expected field {0} to be: [{1}]".format(key, expected_subtype))
+                                    raise SwaggerTypeError(
+                                        "Expected field {0} to be: [{1}]".format(key, expected_subtype)
+                                    )
                             setattr(self, key, val)
                     else:
                         if 'values' in self.known_fields[key]:
                             valid_values = self.known_fields[key]['values']
                             if val not in valid_values:
-                                raise SwaggerTypeError("{0} not a valid value for field: {1} expected on of: {2}".format(val, key, ",".join(valid_values)))
+                                raise SwaggerTypeError(
+                                    "{0} not a valid value for field: {1} expected on of: {2}".format(
+                                        val, key, ",".join(valid_values)
+                                    )
+                                )
                         setattr(self, key, val)
 
                 else:

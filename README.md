@@ -7,7 +7,6 @@ Creating the virtual environment:
 ```
 virtualenv asg
 source ./asg/bin/activate
-virtualenv --relocatable ./asg
 python setup.py develop
 ```
 
