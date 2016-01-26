@@ -42,9 +42,9 @@ class Items(SwaggerBase):
 
 
 class DataType(SwaggerBase):
-    def __init__(self, data_type):
-        required_fields = {}
-        optional_fields = {}
+    def __init__(self, data_type, addtl_required, addtl_optional):
+        required_fields = addtl_required if addtl_required is not None else {}
+        optional_fields = addtl_optional if addtl_optional is not None else {}
 
         if '$ref' in data_type:
             required_fields['$ref'] = {'type': basestring}

@@ -1,4 +1,4 @@
-from .base import SwaggerBase
+from .base import SwaggerBase, SwaggerDict
 from .exceptions import SwaggerTypeError, SwaggerFieldError
 
 
@@ -56,7 +56,7 @@ class OauthGrantImplicit(SwaggerBase):
 class OauthGrantTypes(SwaggerBase):
     def __init__(self, grant_types):
         if not isinstance(grant_types, dict):
-            raise SwaggerTypeError("Mapping type was expected for OauthGrantTypes")
+            raise SwaggerTypeError("Dictionary type was expected for OauthGrantTypes")
 
         if 'implicit' not in grant_types and 'authorization_code' not in grant_types:
             raise SwaggerFieldError("Either implicit or authorization_code need to be specified for grantTypes")
@@ -106,11 +106,6 @@ class Authorization(SwaggerBase):
         SwaggerBase.__init__(self, required_fields, optional_fields, auth)
 
 
-class Authorizations(SwaggerBase):
+class Authorizations(SwaggerDict):
     def __init__(self, authorizations):
-        if not isinstance(authorizations, dict):
-            raise SwaggerTypeError("Mapping type was expected for Authorizations")
-
-        self.authorizations = {}
-        for name, auth in authorizations.iteritems():
-            self.authorizations[name] = Authorization(auth)
+        SwaggerDict.__init__(self, authorizations, 'authorizations', Authorization)

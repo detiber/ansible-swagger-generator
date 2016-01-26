@@ -4,7 +4,6 @@ from.exceptions import SwaggerInvalidError, SwaggerFieldError, SwaggerTypeError
 
 
 class SwaggerBase(object):
-
     def __init__(self, required_fields, optional_fields, swagger_doc):
         self.required_fields = required_fields if required_fields is not None else {}
         self.optional_fields = optional_fields if optional_fields is not None else {}
@@ -61,3 +60,15 @@ class SwaggerBase(object):
         else:
             missing_keys = set(self.required_fields.keys()).difference(self.raw.keys())
             raise SwaggerFieldError("Required fields {0} not found".format(", ".join(missing_keys)))
+
+
+class SwaggerDict(SwaggerBase):
+    def __init__(self, swagger_dict, field, values_type):
+        if not isinstance(swagger_dict, dict):
+            raise SwaggerTypeError("Dictionary type was expected.")
+
+        new_dict = {}
+        for key, val in swagger_dict.iteritems():
+            new_dict[key] = values_type(val)
+
+        setattr(self, field, new_dict)
