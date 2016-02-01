@@ -60,6 +60,7 @@ target/
 
 # VirtualEnv
 asg/
+asg3/
 
 # vim temporary files
 *.swp

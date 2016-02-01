@@ -16,3 +16,7 @@ class SwaggerTypeError(SwaggerError):
 
 class SwaggerNotImplimented(SwaggerError):
     pass
+
+
+class SwaggerValueError(SwaggerError):
+    pass

@@ -1,2 +1,5 @@
 click
 requests
+six
+pyRFC3339
+pytz

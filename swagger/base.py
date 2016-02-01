@@ -1,74 +1,108 @@
 import json
+from .exceptions import SwaggerFieldError, SwaggerTypeError, SwaggerValueError
+from six import iteritems, string_types
 
-from.exceptions import SwaggerInvalidError, SwaggerFieldError, SwaggerTypeError
+try:  # pragma: no cover
+    from collections import MutableSequence
+    from UserDict import IterableUserDict as UserDict
+except ImportError:  # pragma: no cover
+    from collections.abc import MutableSequence
+    from collections import UserDict
 
 
 class SwaggerBase(object):
-    def __init__(self, required_fields, optional_fields, swagger_doc):
-        self.required_fields = required_fields if required_fields is not None else {}
-        self.optional_fields = optional_fields if optional_fields is not None else {}
-        self.parse(swagger_doc)
+    @staticmethod
+    def cast_type(val, to_type):
+        try:
+            return val if isinstance(val, to_type) else to_type(val)
+        except ValueError:
+            raise SwaggerValueError("Value: {0} is not of type: {1}".format(val, to_type))
 
-    def parse(self, swagger_doc):
-        if isinstance(swagger_doc, basestring):
-            self.raw = json.loads(swagger_doc)
-        elif isinstance(swagger_doc, dict):
-            self.raw = swagger_doc
+
+class SwaggerField(SwaggerBase):
+    def __init__(self, f_type, required=False, subtype=None):
+        self.required = required
+        self.type = f_type
+        if issubclass(f_type, SwaggerList) or issubclass(f_type, SwaggerDict):
+            if subtype is None:
+                raise SwaggerTypeError("subtype is required for type: {0}".format(f_type))
+            self.subtype = subtype
+
+    def cast_value(self, data):
+        if isinstance(data, self.type):
+            return data
+        elif issubclass(self.type, (SwaggerList, SwaggerDict)):
+            return self.type(data, self.subtype)
         else:
-            raise SwaggerInvalidError("Could not parse Swagger Object")
-
-        self.known_fields = self.required_fields.copy()
-        self.known_fields.update(self.optional_fields)
-        self.set_fields()
-
-    def set_fields(self):
-        if set(self.required_fields.keys()).issubset(self.raw.keys()):
-            unknown_keys = set(self.raw.keys()).difference(self.known_fields.keys())
-            if unknown_keys:
-                raise SwaggerFieldError("Unexpected fields {0} found".format(", ".join(unknown_keys)))
-
-            for key, val in self.raw.iteritems():
-                expected_type = self.known_fields[key]['type']
-                if issubclass(expected_type, SwaggerBase):
-                    sub = expected_type(val)
-                    setattr(self, key, sub)
-                elif isinstance(val, expected_type):
-                    if isinstance(val, list):
-                        expected_subtype = self.known_fields[key]['subtype']
-                        if issubclass(expected_subtype, SwaggerBase):
-                            setattr(self, key, [expected_subtype(item) for item in val])
-                        else:
-                            for item in val:
-                                if not isinstance(item, expected_subtype):
-                                    raise SwaggerTypeError(
-                                        "Expected field {0} to be: [{1}]".format(key, expected_subtype)
-                                    )
-                            setattr(self, key, val)
-                    else:
-                        if 'values' in self.known_fields[key]:
-                            valid_values = self.known_fields[key]['values']
-                            if val not in valid_values:
-                                raise SwaggerTypeError(
-                                    "{0} not a valid value for field: {1} expected on of: {2}".format(
-                                        val, key, ",".join(valid_values)
-                                    )
-                                )
-                        setattr(self, key, val)
-
-                else:
-                    raise SwaggerTypeError("Expected field {0} to be: {1}".format(key, expected_type))
-        else:
-            missing_keys = set(self.required_fields.keys()).difference(self.raw.keys())
-            raise SwaggerFieldError("Required fields {0} not found".format(", ".join(missing_keys)))
+            return self.cast_type(data, self.type)
 
 
-class SwaggerDict(SwaggerBase):
-    def __init__(self, swagger_dict, field, values_type):
-        if not isinstance(swagger_dict, dict):
-            raise SwaggerTypeError("Dictionary type was expected.")
+class SwaggerObject(SwaggerBase, UserDict):
+    def __init__(self, data_in, fields):
+        self.fields = SwaggerDict(fields, SwaggerField)
+        self.keys = set([name for name in self.fields])
+        self.required_keys = set([name for name, field in iteritems(self.fields) if field.required])
+        self.data = {}
 
-        new_dict = {}
-        for key, val in swagger_dict.iteritems():
-            new_dict[key] = values_type(val)
+        if isinstance(data_in, string_types):
+            data_in = json.loads(data_in)
 
-        setattr(self, field, new_dict)
+        keys_in = set(list(data_in))
+
+        if not self.required_keys <= keys_in:
+            missing = self.required_keys - keys_in
+            raise SwaggerFieldError("Required fields: {0} missing".format(", ".join(missing)))
+
+        if not keys_in <= self.keys:
+            unknown = self.keys - keys_in
+            raise SwaggerFieldError("Unexpected fields: {0} found".format(", ".join(unknown)))
+
+        data = {}
+        for key, value in iteritems(data_in):
+            data[key] = self.fields[key].cast_value(value)
+
+        self.update(data)
+
+    def __setitem__(self, key, item):
+        if key not in self.keys:
+            raise SwaggerFieldError("Invalid field: {0}".format(key))
+        UserDict.__setitem__(self, key, self.fields[key].cast_value(item))
+
+    def __delitem__(self, key):
+        if key in self.required_keys:
+            raise SwaggerFieldError("Cannot delete required field: {0}".format(key))
+        UserDict.__delitem__(self, key)
+
+
+class SwaggerList(SwaggerBase, MutableSequence):
+    def __init__(self, data, data_type):
+        if data is None:
+            data = []
+        self.type = data_type
+        self.data = [self.cast_type(x, self.type) for x in data]
+
+    def __getitem__(self, index):
+        return self.data[index]
+
+    def __setitem__(self, index, value):
+        self.data[index] = self.cast_type(value, self.type)
+
+    def __delitem__(self, index):
+        del self.data[index]
+
+    def insert(self, index, value):
+        self.data.insert(index, self.cast_type(value, self.type))
+
+    def __len__(self):
+        return len(self.data)
+
+
+class SwaggerDict(SwaggerBase, UserDict):
+    def __init__(self, data, data_type):
+        self.type = data_type
+        UserDict.__init__(self, data)
+        for key, value in iteritems(self.data):
+            self.data[key] = self.cast_type(value, self.type)
+
+    def __setitem__(self, key, item):
+        UserDict.__setitem__(self, key, self.cast_type(item, self.type))

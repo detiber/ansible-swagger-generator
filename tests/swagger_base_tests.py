@@ -1,85 +1,145 @@
 import json
+from six import itervalues
 
 from swagger.exceptions import SwaggerError, SwaggerInvalidError, \
                                SwaggerFieldError, SwaggerTypeError, \
                                SwaggerNotImplimented
-from swagger.base import SwaggerBase
+from swagger.base import SwaggerBase, SwaggerDict, SwaggerList, \
+                         SwaggerField, SwaggerValueError, SwaggerObject
 
-from nose.tools import raises
+from nose.tools import raises, assert_equals, assert_is_instance, \
+                       assert_true, assert_in, assert_not_in
 
-BASIC_FIELD_DEF = {'a': {'type': basestring},
-                   'b': {'type': list, 'subtype': basestring}}
 
-FIELD_DEF_WITH_VALUES = {'a': {'type': basestring, 'values': ['a', 'b', 'c']}}
+class TestSwaggerList(object):
+    @staticmethod
+    @raises(SwaggerValueError)
+    def test_invalid_subtype():
+        SwaggerList(['blue'], int)
 
-class TestSwaggerBase(object):
+    @staticmethod
+    def test_empty_list():
+        for empty_val in ([], None):
+            sl = SwaggerList(empty_val, int)
+            assert_equals(len(sl), 0)
 
+    @staticmethod
+    def test_valid_list():
+        test_list=[1, 2, 3]
+        sl = SwaggerList(test_list, int)
+        assert_equals(len(sl), len(test_list))
+        for item in sl:
+            assert_is_instance(item, int)
+
+
+class TestSwaggerDict(object):
+    @staticmethod
+    @raises(SwaggerValueError)
+    def test_invalid_subtype():
+        SwaggerDict({'green': 'blue'}, int)
+
+    @staticmethod
+    def test_empty_dict():
+        for empty_val in ({}, None):
+            sd = SwaggerDict(empty_val, int)
+            assert_equals(len(sd), 0)
+
+    @staticmethod
+    def test_valid_dict():
+        test_dict={'a': 1, 'b': 2, 'c': 3}
+        sd = SwaggerDict(test_dict, int)
+        assert_equals(len(sd), len(test_dict))
+        for val in itervalues(sd):
+            assert_is_instance(val, int)
+
+
+class TestSwaggerField(object):
+    @staticmethod
     @raises(SwaggerTypeError)
-    def test_invalid_value(self):
-        sb = SwaggerBase(FIELD_DEF_WITH_VALUES, [], {'a': 'invalid'})
+    def check_missing_subtype(iter_type):
+        SwaggerField(iter_type)
 
-    @raises(SwaggerInvalidError)
-    def test_invalid_swagger_doc(self):
-        sb = SwaggerBase(BASIC_FIELD_DEF, [], 0)
+    def test_missing_subtypes(self):
+        for i in (SwaggerList, SwaggerDict):
+            yield self.check_missing_subtype, i
 
+    @staticmethod
+    @raises(SwaggerValueError)
+    def test_invalid_cast_value():
+        field = SwaggerField(int)
+        field.cast_value('blue')
+
+    def test_valid_subtypes(self):
+        for iter_type in (SwaggerList, SwaggerDict):
+            sf = SwaggerField(iter_type, subtype=int)
+            assert_true(issubclass(sf.type, iter_type))
+            assert_true(issubclass(sf.subtype, int))
+
+    @staticmethod
+    def test_valid_cast_value():
+        field = SwaggerField(int)
+        value = field.cast_value('9')
+        assert_equals(value, 9)
+
+class TestSwaggerObject(object):
+
+    @staticmethod
     @raises(SwaggerFieldError)
-    def test_missing_required_key(self):
-        sb = SwaggerBase(BASIC_FIELD_DEF, None, {'a': 'hi'})
+    def check_for_field_error(data, fields):
+        SwaggerObject(data, fields)
 
+    def test_field_errors(self):
+        self.check_for_field_error({}, {'a': SwaggerField(int, required=True)})
+        self.check_for_field_error({'a': 9}, {})
+
+    @staticmethod
     @raises(SwaggerFieldError)
-    def test_invalid_field(self):
-        sb = SwaggerBase(BASIC_FIELD_DEF, None, {'a': 'hi', 'b':[], 'c': "blue"})
+    def test_invalid_set():
+        so = SwaggerObject({},{})
+        so['a'] = 9
 
-    @raises(SwaggerTypeError)
-    def test_wrong_type(self):
-        sb = SwaggerBase(BASIC_FIELD_DEF, None, {'a': 'hi', 'b':' orange'})
+    @staticmethod
+    @raises(SwaggerFieldError)
+    def test_invalid_del():
+        so = SwaggerObject({'a': 1},{'a': SwaggerField(int, required=True)})
+        del so['a']
 
-    @raises(SwaggerTypeError)
-    def test_wrong_type_list(self):
-        sb = SwaggerBase(BASIC_FIELD_DEF, None, {'a': 'hi', 'b':[9]})
+    @staticmethod
+    def test_valid_requires():
+        data = {'a': 1, 'b': '2'}
+        fields = {'a': SwaggerField(int, required=True),
+                  'b': SwaggerField(int, required=True)}
+        so = SwaggerObject(data, fields)
+        for key in data:
+            assert_in(key, so)
+            assert_is_instance(so[key], fields[key].type)
 
-    def test_json_parse(self):
-        sb = SwaggerBase(BASIC_FIELD_DEF, None, '{"a": "hi", "b": []}')
-        assert sb.a == "hi"
-        assert sb.b == []
+    @staticmethod
+    def test_missing_optional():
+        data = {'a': 1}
+        fields = {'a': SwaggerField(int, required=True),
+                  'b': SwaggerField(int)}
+        so = SwaggerObject(data, fields)
+        for key in data:
+            assert_in(key, so)
+            assert_is_instance(so[key], fields[key].type)
 
-    def test_valid_values(self):
-        sb = SwaggerBase(FIELD_DEF_WITH_VALUES, [], {'a': 'a'})
-        assert sb.a == 'a'
-        sb = SwaggerBase(FIELD_DEF_WITH_VALUES, [], {'a': 'b'})
-        assert sb.a == 'b'
-        sb = SwaggerBase(FIELD_DEF_WITH_VALUES, [], {'a': 'c'})
-        assert sb.a == 'c'
+    @staticmethod
+    def test_json_data():
+        so = SwaggerObject('{"a": 1}', {'a': SwaggerField(int)})
+        assert_in('a', so)
+        assert_is_instance(so['a'], int)
 
-    def test_nested_def(self):
-        class SwaggerCls1(SwaggerBase):
-            def __init__(self, swagger_doc):
-                SwaggerBase.__init__(self, BASIC_FIELD_DEF, {}, swagger_doc)
+    @staticmethod
+    def test_set():
+        so = SwaggerObject({}, {'a': SwaggerField(int)})
+        so['a'] = '9'
+        assert_in('a', so)
+        assert_is_instance(so['a'], int)
+        assert_equals(so['a'], 9)
 
-        class SwaggerCls2(SwaggerBase):
-            def __init__(self, swagger_doc):
-                SwaggerBase.__init__(self, BASIC_FIELD_DEF, {}, swagger_doc)
-
-        field_def = {'c': {'type': SwaggerCls1},
-                     'd': {'type': list, 'subtype': SwaggerCls2},
-                     'e': {'type': basestring}}
-
-        nested_doc = {'c': {'a': 'hi', 'b': []},
-                      'd': [{'a': 'bye', 'b': ['green']},
-                            {'a': 'fly', 'b': []}],
-                      'e': 'orange'}
-        sb = SwaggerBase(field_def, {}, nested_doc)
-
-        print sb
-        assert isinstance(sb.c, SwaggerCls1)
-        assert sb.c.a == 'hi'
-        assert sb.c.b == []
-        assert isinstance(sb.d, list)
-        for inst in sb.d:
-            assert isinstance(inst, SwaggerCls2)
-        assert sb.d[0].a == 'bye'
-        assert sb.d[0].b == ['green']
-        assert sb.d[1].a == 'fly'
-        assert sb.d[1].b == []
-        assert sb.e == 'orange'
-
+    @staticmethod
+    def test_del():
+        so = SwaggerObject({'a': 9}, {'a': SwaggerField(int)})
+        del so['a']
+        assert_not_in('a', so)

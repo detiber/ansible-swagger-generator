@@ -13,4 +13,4 @@ class Property(DataType):
 
 class Properties(SwaggerDict):
     def __init__(self, properties):
-        SwaggerDict.__init__(self, properties, 'properties', Property)
+        SwaggerDict.__init__(self, properties, Property)

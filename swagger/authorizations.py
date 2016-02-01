@@ -108,4 +108,4 @@ class Authorization(SwaggerBase):
 
 class Authorizations(SwaggerDict):
     def __init__(self, authorizations):
-        SwaggerDict.__init__(self, authorizations, 'authorizations', Authorization)
+        SwaggerDict.__init__(self, authorizations, Authorization)

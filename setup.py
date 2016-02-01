@@ -10,7 +10,7 @@ setup(
     keywords="Ansible Swagger",
     url="https://github.com/ansible-swagger-generator/ansible-swagger-generator",
     packages=['swagger'],
-    install_requires=['click', 'requests'],
+    install_requires=['click', 'requests', 'six', 'pyRFC3339', 'pytz'],
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Topic :: Utilities",
